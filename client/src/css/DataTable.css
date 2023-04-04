@@ -1,0 +1,28 @@
+
+/* border-collapse-> cola uma borda na outra como se fosse um so */
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+/*
+text-align -> alinhando texto na esquerda,
+padding -> preenchendo o tamanho de cada cedula da tabela
+border -> borda
+ */
+th, td {
+    text-align: left;
+    padding: 8px;
+    border: 1px solid #ddd;
+}
+/*
+adicionando cor de fundo as cedulas onde estão os headers
+ */
+th {
+    background-color: #f2f2f2;
+}
+/*
+adicionando cor de fundo, quando o usuario colocar o mouse em cima da linha
+ */
+tr:hover {
+    background-color: #f5f5f5;
+}
