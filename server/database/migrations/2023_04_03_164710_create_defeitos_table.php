@@ -19,7 +19,8 @@ return new class extends Migration
             $table->string('descricao');
             $table->timestamps();
 
-            $table->foreign('carro_id')->references('id')->on('carros');
+            // se o carro for deletado utilizamos o onDelete('cascade') para deletar também os defeitos relacionados a ele
+            $table->foreign('carro_id')->references('id')->on('carros')->onDelete('cascade');
         });
     }
 
