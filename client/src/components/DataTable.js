@@ -1,30 +1,42 @@
 import React, {useState} from 'react'
-import {Button, Table} from 'antd'
+import {Table, Button, Space, Card} from 'antd';
 import CarroCard from "./CarroCard"
-import DefeitoForm from "./Formulario/DefeitoForm";
+import { EyeOutlined, EditOutlined, DeleteOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import CarroForm from "./Formulario/CarroForm";
+import axios from "axios";
 
 // definindo o componente DataTable
 function DataTable(props) {
 
     const [selectedCarro, setSelectedCarro] = useState(null)
 
-    const [showDefeitoForm, setShowDefeitoForm] = useState(false);
-
     const [showVisualizarCard, setShowVisualizarCard] = useState(false);
 
-    function handleEdit(item) {
-        
-    }
+    const [mostrarFormCarro, setMostrarFormCarro] = useState(false)
 
-    function handleDelete(item) {
-        
-    }
-
-    function handleDefeito(item) {
+    // seleciona o carro, e abre o formulario de edição
+    const handleEdit = (item) => {
         setSelectedCarro(item);
-        setShowDefeitoForm(true);
+        setMostrarFormCarro(true);
+    };
+
+    // avisa que o componente de formulario foi fechado
+    const handleCloseForm = () => {
+        setMostrarFormCarro(false)
     }
 
+    // deleta o carro selecionado
+    async function handleDelete(item) {
+        try {
+            const response = await axios.delete(`http://127.0.0.1:8000/api/carro/${item.id}/`);
+            alert(response.data.message)
+            props.onRefresh();
+        } catch (error) {
+            alert('a')
+        }
+    }
+
+    // abre o card de visualização
     function handleVisualizar(item) {
         setSelectedCarro(item);
         setShowVisualizarCard(true);
@@ -57,23 +69,29 @@ function DataTable(props) {
             key: 'actions',
             render: (text, item) => (
                 <>
-                    <Button type="primary" onClick={() => handleVisualizar(item)}>Visualizar</Button>
-                    <Button type="default" onClick={() => handleEdit(item)}>Editar</Button>
-                    <Button danger onClick={() => handleDelete(item)}>Excluir</Button>
-                    <Button warning onClick={() => handleDefeito(item)}>Adicionar Defeitos</Button>
-                    {showDefeitoForm && selectedCarro && (
-                        <DefeitoForm carro_id={selectedCarro.id} onClose={() => setShowDefeitoForm(false)} />
-                    )}
+                    <Space size={8}>
+                        <Button type="primary" onClick={() => handleVisualizar(item)}>
+                            <EyeOutlined />
+                        </Button>
+                        <Button type="default" onClick={() => handleEdit(item)}>
+                            <EditOutlined />
+                        </Button>
+                        <Button danger onClick={() => handleDelete(item) && props.onRefresh}>
+                            <DeleteOutlined />
+                        </Button>
+                    </Space>
                 </>
             ),
         },
     ]
 
     return (
-        <div>
-            <Table columns={columns} dataSource={props.data}/>
+        <div style={{width: '70%',display: 'flex', justifyContent: 'center'}}>
+                <Card style={{ width: '100%'}}>
+                <Table onEdit={(item) => handleEdit(item)} style={{width: '100%' }} columns={columns} dataSource={props.data}/>
+                </Card>
 
-            {showVisualizarCard && selectedCarro && (
+            {showVisualizarCard && selectedCarro && ( //se um carro estiver selecionado e o visualizar card estiver como true, o componente sera renderizado
                 <CarroCard
                     carro={selectedCarro}
                     onClose={() => {
@@ -83,6 +101,8 @@ function DataTable(props) {
                     }
                 />
             )}
+
+            {mostrarFormCarro && <CarroForm selectedItem={selectedCarro} onRefresh={props.onRefresh} onClose={handleCloseForm} />}
         </div>
 
     )
