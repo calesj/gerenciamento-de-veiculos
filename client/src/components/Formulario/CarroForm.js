@@ -1,54 +1,79 @@
-// definindo os modulos que iremos utilizar
-import React, { useState } from "react"
+import React, {useEffect, useState} from "react"
 import axios from "axios"
-import { Card, CardContent } from "@material-ui/core"
-import {Button, Input} from "antd"
+import { Button, Input, Form, Card } from "antd"
+import {CloseOutlined} from "@ant-design/icons"
 
-/*
-definindo o componente funcional CarroForm, ele recebe o onClose como argumento que vai definir o estado inicial
-do isVisible como true
- */
+const CarroForm = ({ onClose, selectedItem, onRefresh }) => {
 
-const CarroForm = ({ onClose }) => {
-
-    // definindo a constante que vai setar se o componente está visivel ou não
     const [isVisible, setIsVisible] = useState(true)
 
-    // definindo os campos do form
-    const [formValues, setFormValues] = useState({
-        modelo: '',
-        fabricante: '',
-        ano: '',
-        preco: '',
-    })
+    const [originalDefeitos, setOriginalDefeitos] = useState("");
 
-    // definindo a constante que mostrará a mensagem de erro de validação que está vindo da API
+    // transforma o texto dos defeitos em array, se não tiver nada, retorna um array vazio
+    const transformDefeitosToDescricaoArray = (defeitos) => {
+        if (!defeitos) {
+            return [];
+        }
+
+        return defeitos.map((defeito) => defeito.descricao);
+    }
+
+    // se existir um selectedItem, significa que é edição, logo todos os campos serão preenchidos com seus respectivos dados
+    const [formValues, setFormValues] = useState({
+        modelo: selectedItem?.modelo || "",
+        fabricante: selectedItem?.fabricante || "",
+        ano: selectedItem?.ano || "",
+        preco: selectedItem?.preco || "",
+        descricao: transformDefeitosToDescricaoArray(selectedItem?.defeitos) || [],
+    });
+
+    // aqui ficará armazenado as mensagens de validação
     const [errorMessage, setErrorMessage] = useState("")
 
-    // método responsavel por fechar o componente
+
+    useEffect(() => {
+        if (selectedItem) {
+            setOriginalDefeitos(
+                transformDefeitosToDescricaoArray(selectedItem?.defeitos).join(",")
+            );
+        }
+    }, [selectedItem]);
+
+    // fecha o componente
     const handleClose = () => {
         setIsVisible(false)
-        // avisa o componente pai que o componente filho está fechado
         onClose(true)
     }
 
-    // metodo assincrono responsavel por fazer a requisição via POST através do Axios, e enviando os valores do FORM
-    // por ser assincrono, significa que ele esperará uma resposta
-    const handleSubmit = async (event) => {
-        event.preventDefault()
-        try {
-            const response = await axios.post('http://127.0.0.1:8000/api/carro', formValues)
-            alert(response.data.message)
-            handleClose()
-        } catch (error) {
-            setErrorMessage(error.response.data.errors)
-        }
-    }
-
-    // método responsavel por atualizar o estado dos valores do Form quando o usuario digita
+    // essa função é chamada toda vez que o valor de um input for alterado, ele atualiza o valor de formValue
     const handleInputChange = (event) => {
         const { name, value } = event.target
         setFormValues((prevValues) => ({ ...prevValues, [name]: value }))
+    }
+
+    const handleTextAreaChange = (event) => {
+        const { value } = event.target;
+        setFormValues((prevValues) => ({ ...prevValues, descricao: value.split(",") }));
+    };
+
+    // faz requisição pra api
+    const handleSubmit = async () => {
+        try {
+            let response;
+
+            if (selectedItem) {
+                response = await axios.put(`http://127.0.0.1:8000/api/carro/${selectedItem.id}`, formValues);
+            } else {
+                response = await axios.post("http://127.0.0.1:8000/api/carro", formValues);
+            }
+
+            console.log(response);
+            onRefresh()
+            handleClose();
+        } catch (error) {
+            console.log(error)
+            setErrorMessage(error.response.data.errors);
+        }
     }
 
     return (
@@ -66,26 +91,35 @@ const CarroForm = ({ onClose }) => {
             }}
         >
             {isVisible && (
-                <Card style={{ height: 600, width: 400 }}>
-                    <CardContent style={{ display: "flex", flexDirection: "column" }}>
-                        <Button style={{ marginLeft: 'auto' }} type="primary" onClick={handleClose}>x</Button>
-                        <form onSubmit={handleSubmit}>
-                        <h1>Formulario</h1>
-                        <div className="form-group">
-                            <label>Modelo</label>
+                <Card
+                    title={"Dados do Carro"}
+                    style={{ width: 400 }}
+                    extra={
+                        <Button type="text" icon={<CloseOutlined />} onClick={handleClose} />
+                    }
+                >
+                    <Form layout="vertical" initialValues={selectedItem} onFinish={handleSubmit}>
+                        <Form.Item
+                            label="Modelo"
+                            name="modelo"
+                            validateStatus={errorMessage.modelo ? "error" : ""}
+                            help={errorMessage.modelo?.[0]}
+                        >
                             <Input
                                 type="text"
                                 name="modelo"
                                 placeholder="Digite o modelo"
-                                validateStatus={errorMessage.modelo}
                                 value={formValues.modelo}
                                 onChange={handleInputChange}
                             />
-                            <p style={{ color: 'red'}}>{errorMessage.modelo && <div>{errorMessage.modelo}</div>}</p>
-                        </div>
+                        </Form.Item>
 
-                        <div className="form-group">
-                            <label>Fabricante</label>
+                        <Form.Item
+                            label="Fabricante"
+                            name="fabricante"
+                            validateStatus={errorMessage.fabricante ? "error" : ""}
+                            help={errorMessage.fabricante}
+                        >
                             <Input
                                 type="text"
                                 name="fabricante"
@@ -93,41 +127,61 @@ const CarroForm = ({ onClose }) => {
                                 value={formValues.fabricante}
                                 onChange={handleInputChange}
                             />
-                            <p style={{ color: 'red'}}>{errorMessage.fabricante && <div>{errorMessage.fabricante}</div>}</p>
-                        </div>
+                        </Form.Item>
 
-                        <div className="form-group">
-                            <label>Ano</label>
+                        <Form.Item
+                            label="Ano"
+                            name="ano"
+                            validateStatus={errorMessage.ano ? "error" : ""}
+                            help={errorMessage.ano}
+                        >
                             <Input
                                 type="text"
                                 name="ano"
-                                placeholder="Digite o ano do veiculo"
+                                placeholder="Digite o ano do veículo"
                                 value={formValues.ano}
                                 onChange={handleInputChange}
                             />
-                            <p style={{ color: 'red'}}>{errorMessage.ano && <div>{errorMessage.ano}</div>}</p>
-                        </div>
+                        </Form.Item>
 
-                        <div className="form-group">
-                            <label>Preço</label>
+                        <Form.Item
+                            label="Preço"
+                            name="preco"
+                            validateStatus={errorMessage.preco ? "error" : ""}
+                            help={errorMessage.preco}
+                        >
                             <Input
                                 type="text"
                                 name="preco"
-                                placeholder="Digite o preço do veiculo"
+                                placeholder="Digite o preço do veículo"
                                 value={formValues.preco}
                                 onChange={handleInputChange}
                             />
-                            <p style={{ color: 'red'}}>{errorMessage.ano && <div>{errorMessage.ano}</div>}</p>
-                        </div>
+                        </Form.Item>
 
-                        <button type="submit" className="primary">
-                            Enviar
-                        </button>
-                        </form>
-                    </CardContent>
+                        <Form.Item
+                            label="Defeitos"
+                            validateStatus={errorMessage.descricao ? "error" : ""}
+                            help={errorMessage.descricao}
+                        >
+                            <Input.TextArea
+                                name="descricao"
+                                rows={4}
+                                placeholder="Digite os defeitos separados por vírgula"
+                                value={formValues.descricao.join(',')}
+                                onChange={handleTextAreaChange}
+                            />
+                        </Form.Item>
+
+
+                        <Form.Item>
+                            <Button type="primary" htmlType="submit">
+                                Enviar
+                            </Button>
+                        </Form.Item>
+                    </Form>
                 </Card>
-                )}
-
+            )}
         </div>
     )
 }
