@@ -3,61 +3,64 @@
 namespace App\Http\Controllers;
 
 use App\Form\FormValidation;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use App\Models\Carro;
 use Illuminate\Support\Facades\DB;
-use Mockery\Exception;
 
 class CarroController extends Controller
 {
-    private $request;
-    private $regras = [
+    private array $rules = [
         'modelo' => 'required',
-        'fabricante',
-        'ano',
-        'preco'
-        ];
-    private $message = ['message' => 'Desculpe, algo deu errado'];
+        'fabricante' => 'required',
+        'ano' => 'required',
+        'preco' => 'required'
+    ];
 
     public function index()
     {
-        try{
+        try {
             $carros = Carro::all();
-
+            if (!$carros) {
+                return response()->json(['message' => 'recurso não encontrado'],404);
+            }
             return response()->json($carros);
         } catch (\Exception $e) {
-            return response()->json($this->message);
+            return response()->json(['message' => 'Desculpe, algo deu errado']);
         }
     }
 
     public function show($id)
     {
-        try{
-        $carro = Carro::with('defeitos')->find($id);
-
-        return response()->json($carro);
+        try {
+            $carro = Carro::with('defeitos')->find($id);
+            if (!$carro) {
+                return response()->json(['message' => 'recurso não encontrado'],404);
+            }
+            return response()->json($carro);
         } catch (\Exception $e) {
-            return response()->json($this->message);
+            return response()->json(['message' => 'Desculpe, algo deu errado']);
         }
     }
 
     public function store(Request $request)
     {
-        $validate = FormValidation::validar((array)$request, $this->regras);
-        //se houver erros de validacao, retornara uma array com a chave errors. e suas respectivas mensagens
-        if (!$validate) {
-            return $validate;
-        }
-
         // cria um ponto de restauração
         DB::beginTransaction();
 
-        $modelo = $request->get('modelo');
-        $fabricante = $request->get('fabricante');
-        $ano = $request->get('ano');
-        $preco = $request->get('preco');
-
         try {
+            $validate = FormValidation::validar($request->all(), $this->rules);
+
+            //se houver erros de validacao, retornara uma array com a chave errors. e suas respectivas mensagens
+            if ($validate !== true) {
+                return $validate;
+            }
+
+            $modelo = $request->get('modelo');
+            $fabricante = $request->get('fabricante');
+            $ano = $request->get('ano');
+            $preco = $request->get('preco');
+
             $carro = new Carro();
             $carro->modelo = $modelo;
             $carro->fabricante = $fabricante;
@@ -70,42 +73,41 @@ class CarroController extends Controller
 
             return response()->json(['message' => 'Oba, deu certo!']);
 
-        } catch (\Exception $e) {
+        } catch (QueryException $e) {
 
             // volta pro ponto de restauração
             DB::rollBack();
 
-            return response()->json($this->message);
+            return response()->json(['message' => 'Desculpe, algo deu errado']);
         }
     }
 
     public function update(Request $request, $id)
     {
-        // verifica se existe um carro no banco com esse id
-        $carro = Carro::find($id);
-
-        if(!$carro) {
-            return response()->json(['Recurso não encontrado'], 404);
-        }
-
-        // validando os dados
-        $validate = FormValidation::validar((array)$request, $carro);
-
-        //se houver erros de validacao, retornara uma array com a chave errors. e suas respectivas mensagens
-        if(!$validate) {
-            return $validate;
-        }
-
         // ponto de restauracao
         DB::beginTransaction();
-
-        // update no banco
-        $modelo = $request->get('modelo');
-        $fabricante = $request->get('fabricante');
-        $ano = $request->get('ano');
-        $preco = $request->get('preco');
-
         try {
+            // verifica se existe um carro no banco com esse id
+            $carro = Carro::find($id);
+
+            if (!$carro) {
+                return response()->json(['Recurso não encontrado'], 404);
+            }
+
+            // validando os dados
+            $validate = FormValidation::validar($request->all(), $this->rules);
+
+            //se houver erros de validacao, retornara uma array com a chave errors. e suas respectivas mensagens
+            if ($validate !== true) {
+                return $validate;
+            }
+
+            // update no banco
+            $modelo = $request->get('modelo');
+            $fabricante = $request->get('fabricante');
+            $ano = $request->get('ano');
+            $preco = $request->get('preco');
+
             $carro->modelo = $modelo;
             $carro->fabricante = $fabricante;
             $carro->ano = $ano;
@@ -117,11 +119,11 @@ class CarroController extends Controller
 
             return response()->json(['message' => 'Item atualizado com sucesso']);
 
-        }catch (Exception $e) {
+        } catch (QueryException $e) {
             // volta para o ponto de restauracao
             DB::rollBack();
 
-            return response()->json($this->message);
+            return response()->json(['message' => 'Desculpe, algo deu errado']);
         }
     }
 
@@ -129,7 +131,7 @@ class CarroController extends Controller
     {
         // verifica se existe um carro no banco com esse id
         $carro = Carro::find($id);
-        if(!$carro) {
+        if (!$carro) {
             return response()->json(['message' => 'recurso não encontrado', 404]);
         }
 
@@ -137,18 +139,18 @@ class CarroController extends Controller
         DB::beginTransaction();
 
         try {
-            $carro->detete();
+            $carro->delete();
 
             // confirma a transacao
             DB::commit();
 
             return response()->json(['message' => 'item deletado com sucesso!']);
-        } catch (\Exception $e) {
+        } catch (QueryException $e) {
 
             // volta para o ponto de restauracao
             DB::rollBack();
 
-            return response()->json($this->message);
+            return response()->json(['message' => 'Desculpe, algo deu errado']);
         }
     }
 }
