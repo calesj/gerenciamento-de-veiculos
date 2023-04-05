@@ -1,7 +1,7 @@
 // importação dos pacotes necessários
 import React, { useState, useEffect } from 'react'
-import { Card, CardContent, Typography } from '@material-ui/core'
-import {Button} from 'antd'
+import {Button, Card} from 'antd'
+import { CloseOutlined } from '@ant-design/icons';
 import axios from 'axios'
 
 // definindo o componente CarroCard
@@ -45,33 +45,21 @@ function CarroCard(props) {
         >
             {   //se carro for verdadeiro ele renderiza o componente
                 carro && (
-                <Card style={{ height: 400, width: 300 }}>
-                    <CardContent style={{ display: 'flex', flexDirection: 'column' }}>
-                        <Button style={{ marginLeft: 'auto' }} type="primary" onClick={handleClose}>x</Button>
-                        <Typography>
-                            <b>Modelo:</b> {carro.modelo}
-                        </Typography>
-                        <Typography>
-                            <b>Fabricante:</b> {carro.fabricante}
-                        </Typography>
-                        <Typography>
-                            <b>Ano:</b> {carro.ano}
-                        </Typography>
-                        <Typography>
-                            <b>Preço:</b> R$ {carro.preco}
-                        </Typography>
-                        <b>Defeitos:</b>
+                    <Card title="Detalhes do carro" extra={ <Button type="text" icon={<CloseOutlined />} onClick={handleClose}></Button>} style={{ width: 300 }}>
 
-                        {//percorrendo os defeitos do objeto carro, e criando um typography pra cada um deles
-                            carro.defeitos &&
+                        <p><b>Modelo:</b> {carro.modelo}</p>
+                        <p><b>Fabricante:</b> {carro.fabricante}</p>
+                        <p><b>Ano:</b> {carro.ano}</p>
+                        <p><b>Preço:</b> R$ {carro.preco}</p>
+                        <p><b>Defeitos:</b></p>
+                        {carro.defeitos &&
                             carro.defeitos.map((defeito) => (
-                                <Typography key={defeito.id} variant="body2" component="p">
-                                    <li style={{color: 'red'}}>{defeito.descricao}</li>
-                                </Typography>
+                                <p key={defeito.id} style={{ color: 'red' }}>
+                                    - {defeito.descricao}
+                                </p>
                             ))}
-                    </CardContent>
-                </Card>
-            )}
+                    </Card>
+                )}
         </div>
     )
 }
