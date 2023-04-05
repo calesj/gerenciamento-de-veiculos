@@ -24,14 +24,14 @@ Route::prefix('carro')->group( function () {
     Route::get('/{id}', [\App\Http\Controllers\CarroController::class, 'show']);
     Route::post('', [\App\Http\Controllers\CarroController::class, 'store']);
     Route::put('/{id}', [\App\Http\Controllers\CarroController::class, 'update']);
-    Route::delete('', [\App\Http\Controllers\CarroController::class, 'delete']);
+    Route::delete('/{id}', [\App\Http\Controllers\CarroController::class, 'delete']);
 });
 
 Route::prefix('defeito')->group( function () {
-    Route::get('', [\App\Http\Controllers\CarroController::class, 'index']);
-    Route::get('/{id}', [\App\Http\Controllers\CarroController::class, 'show']);
-    Route::post('', [\App\Http\Controllers\CarroController::class, 'store']);
-    Route::put('/{id}', [\App\Http\Controllers\CarroController::class, 'update']);
-    Route::delete('', [\App\Http\Controllers\CarroController::class, 'delete']);
+    Route::get('', [\App\Http\Controllers\DefeitoController::class, 'index']);
+    Route::get('/{id}', [\App\Http\Controllers\DefeitoController::class, 'show']);
+    Route::post('', [\App\Http\Controllers\DefeitoController::class, 'store']);
+    Route::put('/{id}', [\App\Http\Controllers\DefeitoController::class, 'update']);
+    Route::delete('', [\App\Http\Controllers\DefeitoController::class, 'delete']);
 });
 
