@@ -1,6 +1,7 @@
 // importação dos pacotes necessários
 import React, { useEffect, useState } from 'react'
 import axios from 'axios'
+import { Spin } from 'antd';
 import DataTable from './components/DataTable'
 import {Button} from "antd"
 import CarroForm from "./components/Formulario/CarroForm"
@@ -14,13 +15,13 @@ function PaginaInicial() {
     // 'listaDeCarros' um lista de objetos que representa os carros que estão vindo da API
     const [carregando, setCarregando] = useState(true)
     const [listaDeCarros, setListaDeCarros] = useState([])
-    const [mostrarCarroForm, setMostrarCarroForm] = useState(false)
+    const [mostrarFormCarro, setMostrarFormCarro] = useState(false)
 
     /*
     deixa o formulario visivel
      */
     const handleClick = () => {
-        setMostrarCarroForm(true)
+        setMostrarFormCarro(true)
     }
 
     /*
@@ -28,7 +29,7 @@ function PaginaInicial() {
     para essa função e definira ele como invisivel
      */
     const handleCloseForm = (formClosed) => {
-        setMostrarCarroForm(false)
+        setMostrarFormCarro(false)
         if (formClosed) {
             carregarDados()
         }
@@ -51,17 +52,33 @@ function PaginaInicial() {
     }, [])
 
     return (
-        <div>
-            <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginLeft: '20px' }}>
-                <h1>Página Inicial</h1>
+        <div style={{
+            backgroundImage: 'linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.5)), url("/imagens/imagem-fundo.jpg")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            minHeight: '100vh',
+        }}>
+
+            <div style={{
+                display: 'flex',
+                justifyContent:'center',
+                alignItems: 'center',
+                backgroundColor: '#DCDCDC', // cor de fundo
+                padding: '1px', // espaçamento interno
+                marginBottom: '50px',
+            }}>
+            <h1 style={{ marginRight: '20px'}}>Gerenciamento de Carros</h1>
                 <Button type="primary" onClick={handleClick}>Adicionar Novo Carro</Button>
-            </span>
-            {carregando ? (
-                <p>Carregando dados...</p>
-            ) : (
-                <DataTable data={listaDeCarros} />
-            )}
-            {mostrarCarroForm && <CarroForm onClose={handleCloseForm} />}
+            </div>
+
+            <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+                {carregando ? (
+                    <Spin size="large" />
+                ) : (
+                    <DataTable data={listaDeCarros} onRefresh={carregarDados} />
+                )}
+                {mostrarFormCarro && <CarroForm onClose={handleCloseForm} />}
+            </div>
         </div>
     )
 }
