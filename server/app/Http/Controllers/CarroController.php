@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Form\FormValidation;
+use App\Models\Defeito;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use App\Models\Carro;
@@ -14,15 +15,16 @@ class CarroController extends Controller
         'modelo' => 'required',
         'fabricante' => 'required',
         'ano' => 'required',
-        'preco' => 'required'
+        'preco' => 'required',
+        'descricao' => 'required'
     ];
 
     public function index()
     {
         try {
-            $carros = Carro::all();
+            $carros = Carro::with('defeitos')->get();
             if (!$carros) {
-                return response()->json(['message' => 'recurso não encontrado'],404);
+                return response()->json(['message' => 'recurso não encontrado'], 404);
             }
             return response()->json($carros);
         } catch (\Exception $e) {
@@ -35,7 +37,7 @@ class CarroController extends Controller
         try {
             $carro = Carro::with('defeitos')->find($id);
             if (!$carro) {
-                return response()->json(['message' => 'recurso não encontrado'],404);
+                return response()->json(['message' => 'recurso não encontrado'], 404);
             }
             return response()->json($carro);
         } catch (\Exception $e) {
@@ -60,6 +62,7 @@ class CarroController extends Controller
             $fabricante = $request->get('fabricante');
             $ano = $request->get('ano');
             $preco = $request->get('preco');
+            $defeitos = $request->get('descricao');
 
             $carro = new Carro();
             $carro->modelo = $modelo;
@@ -67,6 +70,12 @@ class CarroController extends Controller
             $carro->ano = $ano;
             $carro->preco = $preco;
             $carro->save();
+            foreach ($defeitos as $descricao) {
+                $defeito = new Defeito();
+                $defeito->descricao = $descricao;
+                $defeito->carro_id = $carro->id;
+                $defeito->save();
+            }
 
             //confirma operação para o banco
             DB::commit();
@@ -78,7 +87,7 @@ class CarroController extends Controller
             // volta pro ponto de restauração
             DB::rollBack();
 
-            return response()->json(['message' => 'Desculpe, algo deu errado']);
+            return response()->json($e);
         }
     }
 
@@ -89,6 +98,7 @@ class CarroController extends Controller
         try {
             // verifica se existe um carro no banco com esse id
             $carro = Carro::find($id);
+
 
             if (!$carro) {
                 return response()->json(['Recurso não encontrado'], 404);
@@ -102,17 +112,27 @@ class CarroController extends Controller
                 return $validate;
             }
 
+            $carro->defeitos()->delete();
+            $carro->save();
+
             // update no banco
             $modelo = $request->get('modelo');
             $fabricante = $request->get('fabricante');
             $ano = $request->get('ano');
             $preco = $request->get('preco');
+            $defeitos = $request->get('descricao');
 
             $carro->modelo = $modelo;
             $carro->fabricante = $fabricante;
             $carro->ano = $ano;
             $carro->preco = $preco;
             $carro->save();
+            foreach ($defeitos as $descricao) {
+                $defeito = new Defeito();
+                $defeito->descricao = $descricao;
+                $defeito->carro_id = $carro->id;
+                $defeito->save();
+            }
 
             // confirma operacao no banco
             DB::commit();
@@ -123,7 +143,7 @@ class CarroController extends Controller
             // volta para o ponto de restauracao
             DB::rollBack();
 
-            return response()->json(['message' => 'Desculpe, algo deu errado']);
+            return response()->json($e);
         }
     }
 
